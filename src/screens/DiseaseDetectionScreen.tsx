@@ -614,6 +614,27 @@ const styles = StyleSheet.create({
     lineHeight: 17,
     fontStyle: 'italic',
   },
+  retakeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.xs,
+  },
+  retakeSubBtn: {
+    flex: 0.48,
+    backgroundColor: Colors.surface,
+    paddingVertical: 10,
+    paddingHorizontal: Spacing.xs,
+    borderRadius: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  retakeSubBtnText: {
+    fontSize: Typography.captionSize,
+    fontWeight: Typography.weightMedium,
+    color: Colors.primary,
+  },
 });
 
 export default DiseaseDetectionScreen;

@@ -16,17 +16,22 @@ import { mockWeatherData, mockMarketCommodities } from '../data/mockData';
 
 import { useTranslation } from '../i18n';
 import { useAuth } from '../hooks/useAuth';
+import { useWeather } from '../hooks/useWeather';
 
 export const HomeScreen = ({ navigation }: any) => {
   const { t, isRTL } = useTranslation();
   const { user } = useAuth();
+  const locationQuery = user ? `${user.location}, ${user.district}, ${user.state}` : undefined;
+  const { weather } = useWeather(locationQuery);
   const [showAlertModal, setShowAlertModal] = useState(false);
+
+  const currentWeather = weather || mockWeatherData;
 
   const quickActions = [
     {
       id: 'weather',
       title: t('weather'),
-      subtitle: `${mockWeatherData.temperature}°C • ${mockWeatherData.condition}`,
+      subtitle: `${currentWeather.temperature}°C • ${currentWeather.condition}`,
       icon: '🌤️',
       color: '#E0F2FE',
       target: 'Weather',
@@ -144,17 +149,17 @@ export const HomeScreen = ({ navigation }: any) => {
           onPress={() => navigation.navigate('Weather')}>
           <View style={styles.weatherBannerLeft}>
             <Badge label={t('liveWeather')} variant="success" />
-            <Text style={styles.weatherTemp}>{mockWeatherData.temperature}°C</Text>
-            <Text style={styles.weatherCondition}>{mockWeatherData.condition}</Text>
-            <Text style={styles.weatherCity}>📍 {mockWeatherData.city}</Text>
+            <Text style={styles.weatherTemp}>{currentWeather.temperature}°C</Text>
+            <Text style={styles.weatherCondition}>{currentWeather.condition}</Text>
+            <Text style={styles.weatherCity}>📍 {currentWeather.city}</Text>
           </View>
           <View style={styles.weatherBannerRight}>
             <Text style={styles.weatherBigIcon}>🌤️</Text>
             <View style={styles.weatherStatPill}>
-              <Text style={styles.weatherStatText}>💧 {mockWeatherData.humidity}%</Text>
+              <Text style={styles.weatherStatText}>💧 {currentWeather.humidity}%</Text>
             </View>
             <View style={styles.weatherStatPill}>
-              <Text style={styles.weatherStatText}>🌧️ {mockWeatherData.rainChance}% Rain</Text>
+              <Text style={styles.weatherStatText}>🌧️ {currentWeather.rainChance}% Rain</Text>
             </View>
           </View>
         </TouchableOpacity>
@@ -171,7 +176,7 @@ export const HomeScreen = ({ navigation }: any) => {
               <Text style={styles.tapAlertText}>{t('tapDetails')}</Text>
             </View>
             <Text style={styles.advisoryBody} numberOfLines={2}>
-              {mockWeatherData.advisory}
+              {currentWeather.advisory}
             </Text>
           </View>
         </TouchableOpacity>
@@ -246,7 +251,7 @@ export const HomeScreen = ({ navigation }: any) => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>🌱 Agricultural Advisory Details</Text>
-            <Text style={styles.modalDesc}>{mockWeatherData.advisory}</Text>
+            <Text style={styles.modalDesc}>{currentWeather.advisory}</Text>
 
             <View style={styles.modalAlertBox}>
               <Text style={styles.modalAlertTitle}>⚠️ Recommended Action for Wheat</Text>

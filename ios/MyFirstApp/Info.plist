@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>MyFirstApp</string>
+	<string>AgriVerse</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -41,6 +41,10 @@
 	<string>AgriVerse requires photo library access to upload photos of crops and plants for visual disease detection.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>AgriVerse requires photo library access to save captured crop images.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>AgriVerse requires microphone access to record voice commands for the AI Voice Assistant.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>AgriVerse requires speech recognition access to transcribe your spoken farming queries.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, StatusBar, Image } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { Colors, Typography, Spacing } from '../theme/colors';
@@ -25,7 +25,11 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ navigation }) => {
       <StatusBar barStyle="light-content" backgroundColor={Colors.primaryDark} />
       <View style={styles.content}>
         <View style={styles.headerBox}>
-          <Text style={styles.logoIcon}>🌱</Text>
+          <Image
+            source={require('../assets/logo.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
           <Text style={styles.appName}>AgriVerse</Text>
           <Text style={styles.tagline}>Smart Farming, Empowered Agriculture</Text>
         </View>
@@ -97,9 +101,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: Spacing.md,
   },
-  logoIcon: {
-    fontSize: 54,
+  logoImage: {
+    width: 90,
+    height: 90,
     marginBottom: Spacing.xs,
+    borderRadius: 45,
   },
   appName: {
     fontSize: 34,

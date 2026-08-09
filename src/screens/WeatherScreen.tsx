@@ -1,53 +1,68 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { Header } from '../components/Header';
 import { Colors, Typography, Spacing } from '../theme/colors';
 import { mockWeatherData } from '../data/mockData';
+import { useAuth } from '../hooks/useAuth';
+import { useWeather } from '../hooks/useWeather';
 
 export const WeatherScreen = ({ navigation }: any) => {
+  const { user } = useAuth();
+  const locationQuery = user ? `${user.location}, ${user.district}, ${user.state}` : undefined;
+  const { weather, loading, error } = useWeather(locationQuery);
+
+  const currentWeather = weather || mockWeatherData;
+
   return (
     <ScreenContainer>
       <Header
         title="Weather & Advisory"
-        subtitle={mockWeatherData.city}
+        subtitle={currentWeather.city}
         showBack={navigation.canGoBack()}
         onBackPress={() => navigation.goBack()}
       />
-      <ScrollView
-        showsVerticalScrollIndicator={false}>
-        
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {loading && (
+          <View style={{ padding: Spacing.md, alignItems: 'center' }}>
+            <ActivityIndicator size="small" color={Colors.primary} />
+            <Text style={{ fontSize: Typography.captionSize, color: Colors.textSecondary, marginTop: 4 }}>
+              Fetching live weather telemetry for {locationQuery}...
+            </Text>
+          </View>
+        )}
+
         {/* Main Current Weather Hero */}
         <View style={styles.heroCard}>
           <Text style={styles.heroIcon}>🌤️</Text>
-          <Text style={styles.temperature}>{mockWeatherData.temperature}°C</Text>
-          <Text style={styles.condition}>{mockWeatherData.condition}</Text>
-          <Text style={styles.subtext}>📍 {mockWeatherData.city}</Text>
+          <Text style={styles.temperature}>{currentWeather.temperature}°C</Text>
+          <Text style={styles.condition}>{currentWeather.condition}</Text>
+          <Text style={styles.subtext}>📍 {currentWeather.city}</Text>
 
           <View style={styles.divider} />
 
           <View style={styles.metricsGrid}>
             <View style={styles.metricItem}>
               <Text style={styles.metricIcon}>💧</Text>
-              <Text style={styles.metricValue}>{mockWeatherData.humidity}%</Text>
+              <Text style={styles.metricValue}>{currentWeather.humidity}%</Text>
               <Text style={styles.metricLabel}>Humidity</Text>
             </View>
 
             <View style={styles.metricItem}>
               <Text style={styles.metricIcon}>💨</Text>
-              <Text style={styles.metricValue}>{mockWeatherData.windSpeed} km/h</Text>
+              <Text style={styles.metricValue}>{currentWeather.windSpeed} km/h</Text>
               <Text style={styles.metricLabel}>Wind Speed</Text>
             </View>
 
             <View style={styles.metricItem}>
               <Text style={styles.metricIcon}>🌧️</Text>
-              <Text style={styles.metricValue}>{mockWeatherData.rainChance}%</Text>
+              <Text style={styles.metricValue}>{currentWeather.rainChance}%</Text>
               <Text style={styles.metricLabel}>Rain Chance</Text>
             </View>
 
             <View style={styles.metricItem}>
               <Text style={styles.metricIcon}>☀️</Text>
-              <Text style={styles.metricValue}>UV {mockWeatherData.uvIndex}</Text>
+              <Text style={styles.metricValue}>UV {currentWeather.uvIndex}</Text>
               <Text style={styles.metricLabel}>UV Index</Text>
             </View>
           </View>
@@ -56,13 +71,13 @@ export const WeatherScreen = ({ navigation }: any) => {
         {/* Agricultural Advisory Note */}
         <View style={styles.advisoryCard}>
           <Text style={styles.advisoryTitle}>🌱 Farmer Field Advisory</Text>
-          <Text style={styles.advisoryText}>{mockWeatherData.advisory}</Text>
+          <Text style={styles.advisoryText}>{currentWeather.advisory}</Text>
         </View>
 
         {/* 7-Day Forecast */}
         <Text style={styles.sectionTitle}>7-Day Weather Forecast</Text>
         <View style={styles.forecastContainer}>
-          {mockWeatherData.forecast.map((item, index) => (
+          {(currentWeather.forecast || []).map((item, index) => (
             <View key={index} style={styles.forecastRow}>
               <Text style={styles.dayText}>{item.day}</Text>
               <View style={styles.forecastCenter}>

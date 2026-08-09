@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: agriverse-backend
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: NODE_ENV
+        value: production
+      - key: DATA_GOV_API_KEY
+        value: 579b464db66ec23bdd00000173ba5f753b8f4a9d7254e44f133d2230
+      - key: WEATHER_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+    disk:
+      name: agriverse-db-disk
+      mountPath: /app/data
+      sizeGB: 1

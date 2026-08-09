@@ -85,7 +85,18 @@ export const MarketPricesScreen = ({ navigation }: any) => {
       setRecords(res.records || []);
     } catch (err: any) {
       console.error('Agmarknet API fetch failed:', err);
-      setError('Market data unavailable');
+      const msg = err?.message || '';
+      if (msg.includes('400') || msg.includes('Invalid request')) {
+        setError('Invalid request parameters sent to Government Mandi API.');
+      } else if (msg.includes('401') || msg.includes('403') || msg.includes('authentication')) {
+        setError('Government Mandi API key authentication failed or unauthorized.');
+      } else if (msg.includes('404') || msg.includes('not found')) {
+        setError('Government Mandi data resource endpoint not found.');
+      } else if (msg.includes('429') || msg.includes('rate limit')) {
+        setError('Government Mandi API rate limit exceeded. Please try again shortly.');
+      } else {
+        setError('Government mandi data is temporarily unavailable. Please try again later.');
+      }
       setRecords([]);
     } finally {
       setLoading(false);
@@ -96,6 +107,11 @@ export const MarketPricesScreen = ({ navigation }: any) => {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Reset district when state changes to avoid mismatched queries
+  useEffect(() => {
+    setSelectedDistrict('All');
+  }, [selectedState]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -235,11 +251,9 @@ export const MarketPricesScreen = ({ navigation }: any) => {
         ) : error ? (
           <View style={styles.errorBox}>
             <Text style={styles.errorIcon}>⚠️</Text>
-            <Text style={styles.errorTitle}>{error}</Text>
-            <Text style={styles.errorSub}>
-              Failed to load government mandi price data. Please check your internet connection and try again.
-            </Text>
-            <TouchableOpacity style={styles.retryBtn} onPress={loadData}>
+            <Text style={styles.errorTitle}>Market Data Unavailable</Text>
+            <Text style={styles.errorSub}>{error}</Text>
+            <TouchableOpacity style={styles.retryBtn} onPress={() => loadData()}>
               <Text style={styles.retryBtnText}>Retry Connection</Text>
             </TouchableOpacity>
           </View>
@@ -248,7 +262,7 @@ export const MarketPricesScreen = ({ navigation }: any) => {
             <Text style={styles.emptyIcon}>🌾</Text>
             <Text style={styles.emptyTitle}>No Mandi Market Prices Found</Text>
             <Text style={styles.emptySub}>
-              No APMC records found matching your selected state/crop filters. Try clearing filters.
+              No mandi prices found for the selected filters.
             </Text>
             <TouchableOpacity
               style={styles.clearFilterBtn}

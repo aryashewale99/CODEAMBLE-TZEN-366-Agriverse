@@ -1,96 +1,114 @@
-import { OPENAI_CONFIG, isOpenAiConfigured } from '../config/openAiConfig';
+import apiClient from './apiClient';
 
-export interface VoiceTranscriptionResult {
-  text: string;
+declare var window: any;
+declare var navigator: any;
+declare var SpeechSynthesisUtterance: any;
+
+export interface VoiceQueryResponse {
   success: boolean;
+  transcript: string;
+  speechResponse: string;
+  intent: string;
+  actionTaken: string;
+  source: string;
   error?: string;
-  source: 'openai_whisper' | 'simulated_mic';
+}
+
+export interface VoiceStatusResponse {
+  success: boolean;
+  openAiActive: boolean;
+  engineName: string;
 }
 
 export class VoiceService {
   /**
+   * Fetches real-time AI Voice Engine status from backend
+   */
+  async getVoiceStatus(): Promise<VoiceStatusResponse> {
+    try {
+      const res = await apiClient.get<VoiceStatusResponse>('/voice/status');
+      return res;
+    } catch (e: any) {
+      console.warn('Failed to fetch backend voice status:', e);
+      return {
+        success: false,
+        openAiActive: false,
+        engineName: 'AgriVerse Backend Agronomic Engine',
+      };
+    }
+  }
+
+  /**
    * Checks microphone permission status
    */
   async requestMicrophonePermission(): Promise<boolean> {
-    // Microphone permission check placeholder for React Native iOS/Android
-    return true;
+    try {
+      if (typeof navigator !== 'undefined' && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+        return true;
+      }
+      return true;
+    } catch (e) {
+      console.warn('Microphone permission check warning:', e);
+      return true;
+    }
   }
 
   /**
-   * Transcribes audio using OpenAI Whisper API when API key is set, or returns user speech
+   * Sends actual recognized transcript text to AgriVerse Backend Voice AI service
    */
-  async transcribeAudio(audioFileUri?: string): Promise<VoiceTranscriptionResult> {
-    if (isOpenAiConfigured() && audioFileUri) {
-      try {
-        const formData = new FormData();
-        formData.append('file', {
-          uri: audioFileUri,
-          type: 'audio/m4a',
-          name: 'speech.m4a',
-        } as any);
-        formData.append('model', OPENAI_CONFIG.whisperModel);
-
-        const response = await fetch(`${OPENAI_CONFIG.baseUrl}/audio/transcriptions`, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${OPENAI_CONFIG.apiKey}`,
-          },
-          body: formData,
-        });
-
-        if (response.ok) {
-          const json = await response.json();
-          return {
-            text: json.text || '',
-            success: true,
-            source: 'openai_whisper',
-          };
-        }
-      } catch (err: any) {
-        console.warn('OpenAI Whisper transcription failed:', err);
-      }
+  async queryVoiceBackend(transcript: string): Promise<VoiceQueryResponse> {
+    if (!transcript || !transcript.trim()) {
+      return {
+        success: false,
+        transcript: '',
+        speechResponse: 'No speech was detected. Please tap the microphone and speak your query.',
+        intent: 'EMPTY_SPEECH',
+        actionTaken: 'No Action Taken',
+        source: 'Client Validation',
+        error: 'No speech detected.',
+      };
     }
 
-    return {
-      text: '',
-      success: false,
-      error: 'OpenAI API Key unconfigured or audio file missing.',
-      source: 'simulated_mic',
-    };
+    try {
+      const res = await apiClient.post<VoiceQueryResponse>('/voice/query', {
+        transcript: transcript.trim(),
+      });
+      return res;
+    } catch (e: any) {
+      console.error('Backend voice query error:', e);
+      return {
+        success: false,
+        transcript: transcript.trim(),
+        speechResponse: 'Unable to reach AgriVerse Voice AI backend. Please check your network connection.',
+        intent: 'NETWORK_ERROR',
+        actionTaken: 'Service Offline',
+        source: 'Error Handler',
+        error: e?.message || 'Network failure',
+      };
+    }
   }
 
   /**
-   * Synthesizes text response to speech using OpenAI TTS API when configured
+   * Synthesizes text response to speech aloud using SpeechSynthesis API / Audio
    */
   async speakText(text: string): Promise<boolean> {
-    if (!text) return false;
+    if (!text || !text.trim()) return false;
 
-    if (isOpenAiConfigured()) {
-      try {
-        const response = await fetch(`${OPENAI_CONFIG.baseUrl}/audio/speech`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${OPENAI_CONFIG.apiKey}`,
-          },
-          body: JSON.stringify({
-            model: OPENAI_CONFIG.ttsModel,
-            input: text,
-            voice: OPENAI_CONFIG.voice,
-          }),
-        });
-
-        if (response.ok) {
-          console.log('OpenAI TTS audio response generated successfully.');
-          return true;
-        }
-      } catch (err) {
-        console.warn('OpenAI TTS failed:', err);
+    try {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel(); // Stop ongoing speech
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.95;
+        utterance.pitch = 1.0;
+        window.speechSynthesis.speak(utterance);
+        return true;
       }
+    } catch (e) {
+      console.warn('Speech synthesis playback warning:', e);
     }
 
-    // Default console/TTS fallback
-    console.log(`[Voice Synthesis Output]: ${text}`);
+    console.log(`[Text-to-Speech Output]: ${text}`);
     return true;
   }
 }

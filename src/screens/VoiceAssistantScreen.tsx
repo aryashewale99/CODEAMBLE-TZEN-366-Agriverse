@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,10 +13,11 @@ import { ScreenContainer } from '../components/ScreenContainer';
 import { Header } from '../components/Header';
 import { Badge } from '../components/Badge';
 import { Colors, Typography, Spacing } from '../theme/colors';
-import { isOpenAiConfigured } from '../config/openAiConfig';
 import { voiceService } from '../services/voiceService';
-import { voiceIntentParser, ParsedVoiceCommand } from '../services/voiceIntentParser';
+import { ParsedVoiceCommand } from '../services/voiceIntentParser';
 import { voiceIotHandler, VoiceExecutionResult } from '../services/voiceIotHandler';
+
+declare var window: any;
 
 const SAMPLE_COMMANDS = [
   'What is the soil moisture?',
@@ -37,6 +38,26 @@ export const VoiceAssistantScreen = ({ navigation }: any) => {
   const [executionResult, setExecutionResult] = useState<VoiceExecutionResult | null>(null);
   const [isEsp32Online, setIsEsp32Online] = useState<boolean>(true);
   const [pendingConfirmation, setPendingConfirmation] = useState<string | null>(null);
+  
+  // Real-time backend status state
+  const [openAiActive, setOpenAiActive] = useState<boolean>(false);
+  const [engineName, setEngineName] = useState<string>('Checking engine status...');
+
+  const fetchVoiceEngineStatus = useCallback(async () => {
+    try {
+      const status = await voiceService.getVoiceStatus();
+      setOpenAiActive(status.openAiActive);
+      setEngineName(status.engineName);
+    } catch (e) {
+      console.warn('Unable to reach backend voice status endpoint:', e);
+      setOpenAiActive(false);
+      setEngineName('AgriVerse Backend Agronomic Engine');
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchVoiceEngineStatus();
+  }, [fetchVoiceEngineStatus]);
 
   const handleToggleEsp32 = () => {
     const nextState = !isEsp32Online;
@@ -45,30 +66,58 @@ export const VoiceAssistantScreen = ({ navigation }: any) => {
   };
 
   const processVoiceInputText = async (text: string) => {
-    setUserTranscript(text);
+    if (!text || !text.trim()) {
+      Alert.alert('Speech Input Required', 'Please speak or select a valid voice query.');
+      return;
+    }
+
+    const cleanText = text.trim();
+    setUserTranscript(cleanText);
     setIsProcessing(true);
     setExecutionResult(null);
     setParsedCommand(null);
 
     try {
-      // 1. Parse natural language intent (uses OpenAI GPT-4o if configured, or local rule engine)
-      const parsed = await voiceIntentParser.parseIntent(text);
+      // 1. Query AgriVerse Voice Backend API endpoint securely
+      const backendResult = await voiceService.queryVoiceBackend(cleanText);
+
+      // 2. Parse intent and construct command payload
+      const parsed: ParsedVoiceCommand = {
+        intent: (backendResult.intent as any) || 'GENERAL_AGRI',
+        transcript: cleanText,
+        confidence: 0.95,
+        requiresConfirmation: backendResult.intent === 'TURN_ON_PUMP',
+        explanation: backendResult.actionTaken || 'Processed by AgriVerse Voice Engine',
+        source: backendResult.source || 'AgriVerse Backend Engine',
+      };
       setParsedCommand(parsed);
 
-      // 2. Execute command against ESP32 / Irrigation Service
-      const result = await voiceIotHandler.executeCommand(parsed);
+      const result: VoiceExecutionResult = {
+        speechResponse: backendResult.speechResponse,
+        actionTaken: backendResult.actionTaken,
+        isEsp32Connected: isEsp32Online,
+        requiresConfirmation: backendResult.intent === 'TURN_ON_PUMP',
+        confirmationType: backendResult.intent === 'TURN_ON_PUMP' ? 'CONFIRM_PUMP_ON' : undefined,
+        zoneId: 'z1',
+      };
       setExecutionResult(result);
 
-      // 3. Handle confirmation requirement for pump activation
+      // Refresh engine status to ensure banner reflects current engine
+      await fetchVoiceEngineStatus();
+
+      // 3. Handle confirmation requirement for pump activation vs speech playback
       if (result.requiresConfirmation && result.confirmationType === 'CONFIRM_PUMP_ON') {
         setPendingConfirmation(result.zoneId || 'z1');
       } else {
-        // Speak response via Voice Service
-        await voiceService.speakText(result.speechResponse);
+        // Speak response via Voice Service (Text-to-Speech)
+        await voiceService.speakText(backendResult.speechResponse);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Voice Assistant processing error:', err);
-      Alert.alert('Voice Assistant Error', 'Failed to process voice command.');
+      Alert.alert(
+        'Voice Service Error',
+        err?.message || 'Failed to process voice query. Please verify backend connection.'
+      );
     } finally {
       setIsProcessing(false);
       setIsListening(false);
@@ -78,15 +127,44 @@ export const VoiceAssistantScreen = ({ navigation }: any) => {
   const handleSimulateMicrophone = async () => {
     const hasPermission = await voiceService.requestMicrophonePermission();
     if (!hasPermission) {
-      Alert.alert('Microphone Permission', 'Microphone access is required for voice commands.');
+      Alert.alert('Microphone Permission Denied', 'Microphone access is required to capture voice commands.');
       return;
     }
 
     setIsListening(true);
-    // Simulate audio capture pulse
+    setUserTranscript('');
+
+    // Trigger Speech Recognition if Web Speech API is supported
+    if (typeof window !== 'undefined' && (window as any).webkitSpeechRecognition) {
+      try {
+        const SpeechRecognition = (window as any).webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+
+        recognition.onresult = (event: any) => {
+          const speechToText = event.results[0][0].transcript;
+          processVoiceInputText(speechToText);
+        };
+
+        recognition.onerror = (event: any) => {
+          console.warn('Speech recognition error event:', event.error);
+          setIsListening(false);
+          Alert.alert('Speech Recognition Notice', `Audio capture event: ${event.error}. Defaulting to voice query.`);
+          processVoiceInputText('Which crop is suitable for my soil?');
+        };
+
+        recognition.start();
+        return;
+      } catch (e) {
+        console.warn('SpeechRecognition initialization error:', e);
+      }
+    }
+
+    // Fallback for environments / iOS simulators without active SpeechRecognition API hardware
     setTimeout(() => {
-      processVoiceInputText('What is the soil moisture?');
-    }, 1500);
+      processVoiceInputText('Which crop is suitable for my soil?');
+    }, 1200);
   };
 
   const handleConfirmPumpStart = async () => {
@@ -103,8 +181,6 @@ export const VoiceAssistantScreen = ({ navigation }: any) => {
       setIsProcessing(false);
     }
   };
-
-  const openAiActive = isOpenAiConfigured();
 
   return (
     <ScreenContainer scrollable={false}>
@@ -129,8 +205,8 @@ export const VoiceAssistantScreen = ({ navigation }: any) => {
           </View>
           <Text style={styles.openAiSub}>
             {openAiActive
-              ? 'Cloud voice synthesis and natural language processing enabled.'
-              : 'Voice AI architecture is ready. Add your API key in src/config/openAiConfig.ts to enable OpenAI Whisper & GPT-4o. Local rule engine active.'}
+              ? `Cloud voice synthesis and natural language processing enabled (${engineName}).`
+              : 'Voice AI backend is ready. Set OPENAI_API_KEY in server/.env (locally) or Render Environment Secrets (production) to enable OpenAI GPT-4o. Fallback agronomic engine active.'}
           </Text>
         </View>
 

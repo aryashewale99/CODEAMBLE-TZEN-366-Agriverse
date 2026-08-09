@@ -1,37 +1,32 @@
 import { IrrigationZone } from '../types/agri';
-import { mockIrrigationZones } from '../data/mockData';
+import apiClient from './apiClient';
 
 export class IrrigationService {
-  private zones: IrrigationZone[] = mockIrrigationZones;
-
   async getZones(): Promise<IrrigationZone[]> {
-    return this.zones;
+    const res = await apiClient.get<{ success: boolean; zones: IrrigationZone[] }>('/irrigation/zones');
+    if (res && res.success && res.zones) {
+      return res.zones;
+    }
+    throw new Error('Irrigation zones data unavailable from backend service.');
   }
 
   async togglePump(zoneId: string): Promise<IrrigationZone> {
-    this.zones = this.zones.map((zone) =>
-      zone.id === zoneId
-        ? {
-            ...zone,
-            isPumpOn: !zone.isPumpOn,
-            status: !zone.isPumpOn ? 'Active' : 'Idle',
-            soilMoisture: !zone.isPumpOn
-              ? Math.min(100, zone.soilMoisture + 15)
-              : zone.soilMoisture,
-          }
-        : zone
-    );
-    return this.zones.find((z) => z.id === zoneId)!;
+    const res = await apiClient.post<{ success: boolean; zone: IrrigationZone }>('/irrigation/toggle', { zoneId });
+    if (res && res.success && res.zone) {
+      return res.zone;
+    }
+    throw new Error('Failed to toggle pump state on backend service.');
   }
 
-  async updateMoistureThreshold(
-    zoneId: string,
-    target: number
-  ): Promise<IrrigationZone> {
-    this.zones = this.zones.map((zone) =>
-      zone.id === zoneId ? { ...zone, targetMoisture: target } : zone
-    );
-    return this.zones.find((z) => z.id === zoneId)!;
+  async updateMoistureThreshold(zoneId: string, target: number): Promise<IrrigationZone> {
+    const res = await apiClient.post<{ success: boolean; zone: IrrigationZone }>('/irrigation/threshold', {
+      zoneId,
+      targetMoisture: target,
+    });
+    if (res && res.success && res.zone) {
+      return res.zone;
+    }
+    throw new Error('Failed to update moisture threshold on backend service.');
   }
 }
 

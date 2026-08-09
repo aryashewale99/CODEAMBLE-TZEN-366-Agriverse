@@ -1,5 +1,3 @@
-import { OPENAI_CONFIG, isOpenAiConfigured } from '../config/openAiConfig';
-
 export type VoiceIntentType =
   | 'TURN_ON_PUMP'
   | 'TURN_OFF_PUMP'
@@ -7,6 +5,11 @@ export type VoiceIntentType =
   | 'GET_TEMPERATURE'
   | 'GET_HUMIDITY'
   | 'GET_IRRIGATION_STATUS'
+  | 'CROP_RECOMMENDATION'
+  | 'GET_WEATHER'
+  | 'GET_MARKET_PRICES'
+  | 'GENERAL_AGRI'
+  | 'OPENAI_CHAT'
   | 'UNKNOWN';
 
 export interface ParsedVoiceCommand {
@@ -15,59 +18,16 @@ export interface ParsedVoiceCommand {
   confidence: number;
   requiresConfirmation: boolean;
   explanation: string;
-  source: 'openai_gpt4o' | 'local_rule_engine';
+  source: string;
 }
 
 export class VoiceIntentParser {
   /**
-   * Parses natural language speech text into structured intent
+   * Parses natural language speech text locally as fallback if needed.
+   * Main AI processing is performed securely on the backend server.
    */
   async parseIntent(transcript: string): Promise<ParsedVoiceCommand> {
     const text = transcript.trim().toLowerCase();
-
-    // If OpenAI key is configured, invoke OpenAI Chat Completions endpoint
-    if (isOpenAiConfigured()) {
-      try {
-        const response = await fetch(`${OPENAI_CONFIG.baseUrl}/chat/completions`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${OPENAI_CONFIG.apiKey}`,
-          },
-          body: JSON.stringify({
-            model: OPENAI_CONFIG.model,
-            messages: [
-              {
-                role: 'system',
-                content:
-                  'You are AgriVerse Voice AI Assistant. Classify user speech into one of these intents: TURN_ON_PUMP, TURN_OFF_PUMP, GET_SOIL_MOISTURE, GET_TEMPERATURE, GET_HUMIDITY, GET_IRRIGATION_STATUS, UNKNOWN. Respond ONLY in valid JSON format: {"intent": "...", "explanation": "..."}.',
-              },
-              { role: 'user', content: transcript },
-            ],
-            response_format: { type: 'json_object' },
-            temperature: 0.2,
-          }),
-        });
-
-        if (response.ok) {
-          const json = await response.json();
-          const parsed = JSON.parse(json.choices[0].message.content);
-          const intent: VoiceIntentType = parsed.intent || 'UNKNOWN';
-          return {
-            intent,
-            transcript,
-            confidence: 0.95,
-            requiresConfirmation: intent === 'TURN_ON_PUMP',
-            explanation: parsed.explanation || `OpenAI parsed intent: ${intent}`,
-            source: 'openai_gpt4o',
-          };
-        }
-      } catch (err) {
-        console.warn('OpenAI intent parser request failed, using local rule parser:', err);
-      }
-    }
-
-    // Fallback Local Natural Language Intent Matching (for offline/quick commands or when OpenAI key is not set)
     return this.parseLocalIntent(text, transcript);
   }
 
@@ -166,11 +126,11 @@ export class VoiceIntentParser {
     }
 
     return {
-      intent: 'UNKNOWN',
+      intent: 'GENERAL_AGRI',
       transcript: rawTranscript,
-      confidence: 0.0,
+      confidence: 0.85,
       requiresConfirmation: false,
-      explanation: 'Command not recognized. Try asking: "What is the soil moisture?" or "Turn on irrigation".',
+      explanation: 'General agricultural voice query.',
       source: 'local_rule_engine',
     };
   }

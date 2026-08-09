@@ -1,0 +1,148 @@
+{
+  "farmers": [
+    {
+      "id": "farmer-default",
+      "name": "Ramesh Patel",
+      "location": "Karnal Sector 4",
+      "state": "Haryana",
+      "district": "Karnal",
+      "farmSizeAcres": 12.5,
+      "soilTypes": [
+        "Alluvial Loam",
+        "Clay Loam"
+      ],
+      "primaryCrops": [
+        "Wheat",
+        "Basmati Rice",
+        "Mustard"
+      ],
+      "memberSince": "2026",
+      "phone": "+91 98765 43210",
+      "email": "ramesh.farmer@agriverse.io",
+      "updatedAt": "2026-08-09T01:11:40.992Z"
+    }
+  ],
+  "soil_readings": [
+    {
+      "id": "soil-1",
+      "sector": "North Sector A",
+      "nitrogen": 95,
+      "phosphorus": 48,
+      "potassium": 42,
+      "ph": 6.8,
+      "moisturePercent": 42,
+      "soilType": "Alluvial Loam",
+      "lastTested": "2026-08-09T01:11:40.992Z"
+    },
+    {
+      "id": "soil-2",
+      "sector": "East Sector B",
+      "nitrogen": 110,
+      "phosphorus": 55,
+      "potassium": 50,
+      "ph": 7.1,
+      "moisturePercent": 68,
+      "soilType": "Clay Loam",
+      "lastTested": "2026-08-09T01:11:40.992Z"
+    }
+  ],
+  "recommendations": [
+    {
+      "id": "rec-1786237933871",
+      "timestamp": "2026-08-09T01:12:13.871Z",
+      "inputs": {
+        "nitrogen": "90",
+        "phosphorus": "45",
+        "potassium": "45",
+        "ph": "6.5",
+        "soilType": "Loam",
+        "rainfall": "600",
+        "temperature": "26"
+      },
+      "topRecommendation": "Wheat (PBW 725 / Sharbati)",
+      "resultsCount": 6
+    }
+  ],
+  "disease_inspections": [
+    {
+      "id": "diag-1786250238192",
+      "timestamp": "2026-08-09T04:37:18.192Z",
+      "imagePath": "file:///Users/arya/Library/Developer/CoreSimulator/Devices/B58BEFFB-AB88-4DDC-B4EB-4DE2E1026DDE/data/Containers/Data/Application/6C25A655-8E60-4359-83FE-108E80A282DC/tmp/3CB57DD3-FF50-4E31-BC2A-BDF369AB2228.jpg",
+      "fileSize": 0,
+      "notes": "Foliar crop disease inspection upload",
+      "receivedAt": "2026-08-09T04:37:18.191Z",
+      "status": "Ingested & Logged"
+    },
+    {
+      "id": "diag-1786249912549",
+      "timestamp": "2026-08-09T04:31:52.549Z",
+      "imagePath": "file:///Users/arya/Library/Developer/CoreSimulator/Devices/B58BEFFB-AB88-4DDC-B4EB-4DE2E1026DDE/data/Containers/Data/Application/6C25A655-8E60-4359-83FE-108E80A282DC/tmp/6DBF2F9F-4C0C-4646-A77F-FF9EF5ADA579.jpg",
+      "fileSize": 0,
+      "notes": "Foliar crop disease inspection upload",
+      "receivedAt": "2026-08-09T04:31:52.548Z",
+      "status": "Ingested & Logged"
+    },
+    {
+      "id": "diag-1786245900654",
+      "timestamp": "2026-08-09T03:25:00.654Z",
+      "imagePath": "file:///Users/arya/Library/Developer/CoreSimulator/Devices/B58BEFFB-AB88-4DDC-B4EB-4DE2E1026DDE/data/Containers/Data/Application/6C25A655-8E60-4359-83FE-108E80A282DC/tmp/1BB0977F-D378-48BE-B5CE-38C29A69E533.jpg",
+      "fileSize": 0,
+      "notes": "Foliar crop disease inspection upload",
+      "receivedAt": "2026-08-09T03:25:00.651Z",
+      "status": "Ingested & Logged"
+    },
+    {
+      "id": "diag-1786241605110",
+      "timestamp": "2026-08-09T02:13:25.110Z",
+      "imagePath": "file:///Users/arya/Library/Developer/CoreSimulator/Devices/B58BEFFB-AB88-4DDC-B4EB-4DE2E1026DDE/data/Containers/Data/Application/A73A2755-DC84-4C7E-891B-2BE67AEA80D1/tmp/E13586BC-397C-46C9-8C97-1F4D5F11DD7A.jpg",
+      "fileSize": 0,
+      "notes": "Foliar crop disease inspection upload",
+      "receivedAt": "2026-08-09T02:13:25.107Z",
+      "status": "Ingested & Logged"
+    },
+    {
+      "id": "diag-1786238667729",
+      "timestamp": "2026-08-09T01:24:27.729Z",
+      "imagePath": "file:///Users/arya/Library/Developer/CoreSimulator/Devices/B58BEFFB-AB88-4DDC-B4EB-4DE2E1026DDE/data/Containers/Data/Application/8C6C78F9-64E3-4EE0-981C-86F619F61A22/tmp/6434FB71-9900-4A4D-9AD8-51E2DF20758A.jpg",
+      "fileSize": 0,
+      "notes": "Foliar crop disease inspection upload",
+      "receivedAt": "2026-08-09T01:24:27.727Z",
+      "status": "Ingested & Logged"
+    }
+  ],
+  "irrigation_zones": [
+    {
+      "id": "zone-1",
+      "name": "North Sector A (Wheat)",
+      "crop": "Wheat PBW 725",
+      "soilMoisture": 42,
+      "status": "Active",
+      "lastWatered": "2 hours ago",
+      "nextScheduled": "Today, 6:00 PM",
+      "targetMoisture": 65,
+      "isPumpOn": true
+    },
+    {
+      "id": "zone-2",
+      "name": "East Sector B (Maize)",
+      "crop": "Hybrid Maize",
+      "soilMoisture": 68,
+      "status": "Auto",
+      "lastWatered": "Yesterday, 8:00 AM",
+      "nextScheduled": "Tomorrow, 7:00 AM",
+      "targetMoisture": 60,
+      "isPumpOn": false
+    },
+    {
+      "id": "zone-3",
+      "name": "Polyhouse 1 (Tomato)",
+      "crop": "Cherry Tomato",
+      "soilMoisture": 55,
+      "status": "Auto",
+      "lastWatered": "4 hours ago",
+      "nextScheduled": "Today, 4:30 PM",
+      "targetMoisture": 70,
+      "isPumpOn": false
+    }
+  ]
+}

@@ -1,23 +1,20 @@
 import { WeatherData } from '../types/agri';
+import apiClient from './apiClient';
 
 export const weatherService = {
-  async getCurrentWeather(location = 'North Field Sector 4'): Promise<WeatherData> {
-    return {
-      city: location,
-      temperature: 29,
-      condition: 'Partly Cloudy',
-      humidity: 68,
-      windSpeed: 14,
-      rainChance: 25,
-      uvIndex: 6,
-      advisory: 'Optimal weather for irrigation today. Light evening rainfall expected.',
-      forecast: [
-        { day: 'Mon', tempHigh: 31, tempLow: 22, condition: 'Sunny', icon: '☀️', rainChance: 10 },
-        { day: 'Tue', tempHigh: 30, tempLow: 21, condition: 'Cloudy', icon: '☁️', rainChance: 40 },
-        { day: 'Wed', tempHigh: 28, tempLow: 20, condition: 'Rain', icon: '🌧️', rainChance: 80 },
-        { day: 'Thu', tempHigh: 29, tempLow: 21, condition: 'Thunderstorm', icon: '⛈️', rainChance: 65 },
-        { day: 'Fri', tempHigh: 32, tempLow: 23, condition: 'Clear', icon: '☀️', rainChance: 5 },
-      ],
-    };
+  async getCurrentWeather(location = 'North Field Sector 4', lat?: number, lon?: number): Promise<WeatherData> {
+    const params = new URLSearchParams();
+    if (location) params.append('location', location);
+    if (lat !== undefined) params.append('lat', lat.toString());
+    if (lon !== undefined) params.append('lon', lon.toString());
+
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    const res = await apiClient.get<{ success: boolean; data: WeatherData }>(`/weather${queryString}`);
+    if (res && res.success && res.data) {
+      return res.data;
+    }
+    throw new Error('Weather data unavailable from backend service.');
   },
 };
+
+export default weatherService;

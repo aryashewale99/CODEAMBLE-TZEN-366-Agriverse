@@ -2,7 +2,7 @@ export const APP_CONFIG = {
   appName: 'AgriVerse',
   tagline: 'Smart Farming, Empowered Agriculture',
   version: '1.0.0',
-  apiBaseUrl: 'https://api.agriverse.io/v1',
+  apiBaseUrl: 'http://localhost:5001/api/v1',
   supportEmail: 'support@agriverse.io',
   defaultLocation: {
     latitude: 28.6139,

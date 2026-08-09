@@ -1,5 +1,5 @@
-import { AGMARKNET_CONFIG } from '../config/apiConfig';
 import { AgmarknetApiResponse, AgmarknetRecord } from '../types/agri';
+import apiClient from './apiClient';
 
 export interface MarketFetchFilters {
   state?: string;
@@ -10,87 +10,34 @@ export interface MarketFetchFilters {
   offset?: number;
 }
 
-const getEffectiveApiKey = (): string => {
-  const key = AGMARKNET_CONFIG.apiKey;
-  if (!key || key.includes('YOUR_') || key.includes('HERE')) {
-    return '579b464db66ec23bdd000001cdd3946e44ce4aad7209ff7b23ac571b';
-  }
-  return key;
-};
-
 export class AgmarknetMarketService {
   /**
-   * Fetches real daily mandi market price data from official data.gov.in Agmarknet API
+   * Fetches real daily mandi market price data via AgriVerse backend API proxying data.gov.in
    */
   async fetchMandiPrices(filters: MarketFetchFilters = {}): Promise<AgmarknetApiResponse> {
-    const {
-      state,
-      district,
-      commodity,
-      market,
-      limit = AGMARKNET_CONFIG.defaultLimit,
-      offset = 0,
-    } = filters;
+    const { state, district, commodity, market, limit = 100, offset = 0 } = filters;
+    const params = new URLSearchParams();
+    if (state && state !== 'All') params.append('state', state);
+    if (district && district !== 'All') params.append('district', district);
+    if (commodity && commodity !== 'All') params.append('commodity', commodity);
+    if (market && market !== 'All') params.append('market', market);
+    params.append('limit', limit.toString());
+    params.append('offset', offset.toString());
 
-    const apiKey = getEffectiveApiKey();
-    let url = `${AGMARKNET_CONFIG.baseUrl}?api-key=${apiKey}&format=json&limit=${limit}&offset=${offset}`;
-
-
-    if (state && state !== 'All') {
-      url += `&filters[state]=${encodeURIComponent(state)}`;
+    const res = await apiClient.get<AgmarknetApiResponse>(`/market/prices?${params.toString()}`);
+    if (res && (res.records || (res as any).success)) {
+      return res;
     }
-    if (district && district !== 'All') {
-      url += `&filters[district]=${encodeURIComponent(district)}`;
-    }
-    if (commodity && commodity !== 'All') {
-      url += `&filters[commodity]=${encodeURIComponent(commodity)}`;
-    }
-    if (market && market !== 'All') {
-      url += `&filters[market]=${encodeURIComponent(market)}`;
-    }
-
-    try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Government API HTTP status ${response.status}`);
-      }
-
-      const data: AgmarknetApiResponse = await response.json();
-
-      if (data.error || (data.status && data.status !== 'ok')) {
-        throw new Error(data.error || 'Agmarknet API returned non-ok status');
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Failed to fetch real Agmarknet data:', error);
-      throw error; // Re-throw to handle gracefully with "Market data unavailable" state
-    }
+    throw new Error('Agmarknet Mandi Market API response invalid or unavailable.');
   }
 
-  /**
-   * Fetches historical daily records for a commodity to compute real 7-Day Price Trend
-   */
   async fetchHistoricalPrices(commodity: string, limit = 60): Promise<AgmarknetRecord[]> {
     if (!commodity || commodity === 'All') {
       return [];
     }
-
-    const apiKey = getEffectiveApiKey();
-    const url = `${AGMARKNET_CONFIG.baseUrl}?api-key=${apiKey}&format=json&limit=${limit}&offset=0&filters[commodity]=${encodeURIComponent(commodity)}`;
-
     try {
-      const response = await fetch(url);
-      if (!response.ok) return [];
-      const data: AgmarknetApiResponse = await response.json();
-      return data.records || [];
+      const res = await this.fetchMandiPrices({ commodity, limit });
+      return res.records || [];
     } catch {
       return [];
     }
